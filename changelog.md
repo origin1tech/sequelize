@@ -1,10 +1,89 @@
 # Next
+- [BUG] Fixed `field` support for `increment` and `decrement`.
+- [FEATURE/BUG] Raw queries always return all results (including affected rows etc). This means you should change all promise listeners on `sequelize.query` to use `.spread` instead of `.then`, unless you are passing a query type.
+
+#### Backwards compatability changes
+- The default query type for `sequelize.query` is now `RAW` - this means that two arguments (results and metadata) will be returned by default and you should use `.spread`
+- The 4th argument to `sequelize.query` has been deprecated in favor of `options.replacements`
+
+# 2.0.0-rc8
+- [FEATURE] CLS Support. CLS is also used to automatically pass the transaction to any calls within the callback chain when using `sequelize.transaction(function() ...`.
+- [BUG] Fixed issue with paranoid deletes and `deletedAt` with a custom field.
+- [BUG] No longer crahes on `where: []`
+- [FEATURE] Validations are now enabled by default for upsert.
+- [FEATURE] Preliminary support for `include.through.where`
+- [SECURITY/BUG] Fixed injection issue in direction param for order
+
+# 2.0.0-rc7
+- [FEATURE] Throw an error if no where clause is given to `Model.destroy()`.
+- [BUG] Fixed issue with `order: sequelize.literal('string')`
+- [FEATURE] add `clone: true` support to `.get()`. Is needed when using `delete` on values from a `.get()` (`toJSON()`, `this.values`). (.get() is just a reference to the values for performance reasons when there's no custom getters or includes)
+- [FEATURE] add `sequelize.escape(value)` convenience method
+- [BUG] Fixes crash with `findAll({include: [Model], order: sequelize.literal()})`
+- [FEATURE] Now possible to pass `createdAt` and `updatedAt` values to `Model.create`/`Model.bulkCreate` when using silent: true (when importing datasets with existing timestamps)
+- [FEATURE] `instance.update()` using default fields will now automatically also save and validate values provided via `beforeUpdate` hooks
+- [BUG] Fixed bad SQL when updating a JSON attribute with a different `field`
+- [BUG] Fixed issue with creating and updating values of a `DataTypes.ARRAY(DataTypes.JSON)` attribute
+- [BUG] `Model.bulkCreate([{}], {returning: true})` will now correctly result in instances with primary key values.
+- [BUG] `instance.save()` with `fields: []` (as a result of `.changed()` being `[]`) will no result in a noop instead of an empty update query.
+- [BUG] Fixed case where `findOrCreate` could return `[null, true]` when given a `defaults` value that triggered a unique constraint error.
+
+#### Backwards compatability changes
+- `instance.update()` using default fields will now automatically also save and validate values provided via `beforeUpdate` hooks
+- Sequelize no longer supports case insensitive mysql enums
+- `pg-hstore` has been moved to a devDependency, Postgres users will have to install `pg-hstore` manually alongside `pg`: `$ npm install pg pg-hstore`
+
+# 2.0.0-rc6
+- [BUG] Fixed issue with including by association reference and where
+
+# 2.0.0-rc5
+- [BUG] Fixed issue with subquery creating `include.where` and a paranoid main model.#2749/#2769
+- UniqueConstraintErrors will now extend from ValidationError making it possible to catch both with `.catch(ValidationError)`
+- [FEATURE] Adds `{save: false}` for belongsTo relationship setters. `user.setOrganization(organization, {save: false})` will then only set the foreign key value, but not trigger a save on `user`.
+- [FEATURE] When updating an instance `_previousDataValues` will now be updated after `afterUpdate` hooks have been run rather than before allowing you to use `changed` in `afterUpdate`
+- [BUG] Sequelize will no longer fail on a postgres constraint error not defined by Sequelize
+- [FEATURE] It's now possible to pass an association reference to include. `var Owner = Company.belongsTo(User, {as: 'owner'}; Company.findOne({include: [Owner]});`
+
+#### Backwards compatability changes
+- When updating an instance `_previousDataValues` will now be updated after `afterUpdate` hooks have been run rather than before allowing you to use `changed` in `afterUpdate`
+
+# 2.0.0-rc4
+- [INTERNALS] Update `inflection` dependency to v1.5.3
+- [FEATURE] Replaced string error messages for connection errors with error objects. [#2576](https://github.com/sequelize/sequelize/pull/2576)
+- [FEATURE] Support for updating fields on duplicate key in bulk update (mysql only) [#2692](https://github.com/sequelize/sequelize/pull/2692)
+- [FEATURE] Basic support for Microsoft SQL Server
+- [INTERNALS] Deprecate migration logic. This is now implemented in [umzug](https://github.com/sequelize/umzug) and the [CLI](https://github.com/sequelize/cli).
+- [BUG] Fixed various inconsistencies with `Instance.update` and how it behaves together with `create`, `fields` and more.
+- [BUG] Fixed crash/bug when using `include.where` together with `association.scope`
+- [BUG] Fixed support for `Instance.destroy()` and `field` for postgres.
+
+#### Backwards compatability changes
+- Some of the string error messages for connection errors have been replaced with actual error instances. Checking for connection errors should now be more consistent.
+
+# 2.0.0-rc3
+- [FEATURE] Added the possibility of removing multiple associations in 1 call [#2338](https://github.com/sequelize/sequelize/issues/2338)
+- [FEATURE] Undestroy method for paranoid models [#2540](https://github.com/sequelize/sequelize/pull/2540)
+- [FEATURE] Support for UPSERT
 - [BUG] Add support for `field` named the same as the attribute in `reload`, `bulkCreate` and `save` [#2348](https://github.com/sequelize/sequelize/issues/2348)
 - [BUG] Copy the options object in association getters. [#2311](https://github.com/sequelize/sequelize/issues/2311)
+- [BUG] `Model#destroy()` now supports `field`, this also fixes an issue with `N:M#removeAssociation` and `field`
+- [BUG] Customized error message can now be set for unique constraint that was created manually (not with sync, but e.g. with migrations) or that has fields with underscore naming. This was problem at least with postgres before.
+- [BUG] Fixed a bug where plain objects like `{ in: [...] }` were not properly converted to SQL when combined with a sequelize method (`fn`, `where` etc.). Closes [#2077](https://github.com/sequelize/sequelize/issues/2077)
+- [BUG] Made the default for array search in postgres exact comparison instead of overlap
+- [BUG] Allow logging from individual functions even though the global logging setting is false. Closes [#2571](https://github.com/sequelize/sequelize/issues/2571)
+- [BUG] Allow increment/decrement operations when using schemata
+- [BUG] Allow createTable with schema
+- [BUG] Fix some issues with findAndCount and include
+- [INTERNALS] Update `inflection` dependency to v1.5.2
+- [REMOVED] Remove query generation syntactic sugar provided by `node-sql`, as well as the dependency on that module
 
 #### Backwards compatability changes
 - When eager-loading a many-to-many association, the attributes of the through table are now accessible through an attribute named after the through model rather than the through table name singularized. i.e. `Task.find({include: Worker})` where the table name for through model `TaskWorker` is `TableTaskWorkers` used to produce `{ Worker: { ..., TableTaskWorker: {...} } }`. It now produces `{ Worker: { ..., TaskWorker: {...} } }`. Does not affect models where table name is auto-defined by Sequelize, or where table name is model name pluralized.
 - When using `Model#find()` with an `order` clause, the table name is prepended to the `ORDER BY` SQL. e.g. `ORDER BY Task.id` rather than `ORDER BY id`. The change is to avoid ambiguous column names where there are eager-loaded associations with the same column names. A side effect is that code like `Task.findAll( { include: [ User ], order: [ [ 'Users.id', 'ASC' ] ] } )` will now throw an error. This should be achieved with `Task.findAll( { include: [ User ], order: [ [ User, 'id', 'ASC' ] ] } )` instead.
+- Nested HSTORE objects are no longer supported. Use DataTypes.JSON instead.
+- In PG `where: { arr: [1, 2] }` where the `arr` column is an array will now use strict comparison (`=`) instead of the overlap operator (`&&`). To obtain the old behaviour, use `  where: { arr: { overlap: [1, 2] }}`
+- The default `fields` for `Instance#save` (when not a new record) is now an intersection of the model attributes and the changed attributes making saves more atomic while still allowing only defined attributes.
+- Syntactic sugar for query generation was removed. You will no longer be able to call Model.dataset() to generate raw sql queries
 
 # 2.0.0-rc2
 - [FEATURE] Added to posibility of using a sequelize object as key in `sequelize.where`. Also added the option of specifying a comparator
